@@ -1,151 +1,143 @@
-import React, { useState } from 'react';
-import { Dumbbell, Save } from 'lucide-react';
-import ExerciseForm from './components/ExerciseForm';
-import WorkoutPDF from './components/WorkoutPDF';
-import MuscleGroupTabs from './components/MuscleGroupTabs';
-import ExerciseList from './components/ExerciseList';
-import WorkoutSplitSelector from './components/WorkoutSplitSelector';
-import SavedWorkoutsList from './components/SavedWorkoutsList';
-import { useWorkoutStorage } from './hooks/useWorkoutStorage';
-import type { Exercise, SavedWorkout, WorkoutSplit, WorkoutDay } from './types/workout';
-
-const initialMuscleGroups = [
-  { id: '1', name: 'Peito', exercises: [] },
-  { id: '2', name: 'Costas', exercises: [] },
-  { id: '3', name: 'Pernas', exercises: [] },
-  { id: '4', name: 'Ombros', exercises: [] },
-  { id: '5', name: 'Bíceps', exercises: [] },
-  { id: '6', name: 'Tríceps', exercises: [] },
-  { id: '7', name: 'Abdômen', exercises: [] },
-];
+import React from 'react';
+import { ExerciseForm } from './components/ExerciseForm';
+import { WorkoutDay } from './components/WorkoutDay';
+import { SaveButton } from './components/SaveButton';
+import { Exercise, WorkoutPlan, WorkoutSplit } from './types/workout';
+import { Dumbbell } from 'lucide-react';
 
 function App() {
-  const { workout, setWorkout, saveCurrentWorkout } = useWorkoutStorage({
-    id: '1',
-    name: 'Meu Treino',
-    muscleGroups: initialMuscleGroups,
-    savedWorkouts: [],
+  const [workoutType, setWorkoutType] = React.useState<WorkoutSplit>('ABC');
+  const [workoutPlan, setWorkoutPlan] = React.useState<WorkoutPlan>({
+    type: 'ABC',
+    days: [
+      { name: 'A', exercises: [] },
+      { name: 'B', exercises: [] },
+      { name: 'C', exercises: [] },
+    ],
   });
-  
-  const [selectedGroup, setSelectedGroup] = useState<string>(initialMuscleGroups[0].id);
-  const [selectedSavedWorkout, setSelectedSavedWorkout] = useState<SavedWorkout | null>(null);
+  const [selectedDay, setSelectedDay] = React.useState(0);
 
-  const handleSelectSplit = (split: WorkoutSplit) => {
-    setWorkout((prev) => ({
-      ...prev,
-      selectedSplit: split,
-      selectedDay: undefined,
-    }));
-  };
-
-  const handleSelectDay = (day: WorkoutDay) => {
-    setWorkout((prev) => ({
-      ...prev,
-      selectedDay: day,
-    }));
-    if (day.muscleGroups.length > 0) {
-      setSelectedGroup(day.muscleGroups[0]);
-    }
+  const handleWorkoutTypeChange = (type: WorkoutSplit) => {
+    setWorkoutType(type);
+    setSelectedDay(0);
+    setWorkoutPlan({
+      type,
+      days: type === 'ABC'
+        ? [
+            { name: 'A', exercises: [] },
+            { name: 'B', exercises: [] },
+            { name: 'C', exercises: [] },
+          ]
+        : [
+            { name: 'A', exercises: [] },
+            { name: 'B', exercises: [] },
+            { name: 'C', exercises: [] },
+            { name: 'D', exercises: [] },
+          ],
+    });
   };
 
   const handleAddExercise = (exercise: Exercise) => {
-    setWorkout((prev) => ({
+    setWorkoutPlan((prev) => ({
       ...prev,
-      muscleGroups: prev.muscleGroups.map((group) =>
-        group.id === selectedGroup
-          ? { ...group, exercises: [...group.exercises, exercise] }
-          : group
+      days: prev.days.map((day, index) =>
+        index === selectedDay
+          ? { ...day, exercises: [...day.exercises, exercise] }
+          : day
       ),
     }));
   };
 
-  const handleRemoveExercise = (groupId: string, exerciseId: string) => {
-    setWorkout((prev) => ({
+  const handleRemoveExercise = (dayIndex: number, exerciseIndex: number) => {
+    setWorkoutPlan((prev) => ({
       ...prev,
-      muscleGroups: prev.muscleGroups.map((group) =>
-        group.id === groupId
-          ? { ...group, exercises: group.exercises.filter((ex) => ex.id !== exerciseId) }
-          : group
+      days: prev.days.map((day, index) =>
+        index === dayIndex
+          ? {
+              ...day,
+              exercises: day.exercises.filter((_, i) => i !== exerciseIndex),
+            }
+          : day
       ),
     }));
   };
-
-  const handleSaveWorkout = () => {
-    try {
-      saveCurrentWorkout();
-      alert('Treino salvo com sucesso!');
-    } catch (error) {
-      alert('Selecione um treino e um dia antes de salvar.');
-    }
-  };
-
-  if (selectedSavedWorkout) {
-    return (
-      <div className="h-screen">
-        <button
-          onClick={() => setSelectedSavedWorkout(null)}
-          className="fixed top-4 left-4 bg-blue-600 text-white px-4 py-2 rounded-md z-50"
-        >
-          Voltar
-        </button>
-        <WorkoutPDF workout={selectedSavedWorkout} />
-      </div>
-    );
-  }
-
-  const visibleMuscleGroups = workout.selectedDay
-    ? workout.muscleGroups.filter((group) => workout.selectedDay!.muscleGroups.includes(group.id))
-    : workout.muscleGroups;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2">
-            <Dumbbell className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-800">Planejador de Treino</h1>
+    <div className="min-h-screen bg-gray-100">
+      <header className="bg-blue-600 text-white py-6">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center gap-2">
+            <Dumbbell size={32} />
+            <h1 className="text-3xl font-bold">Planejador de Treino</h1>
           </div>
-          {workout.selectedDay && (
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 py-8">
+        <div className="mb-8">
+          <div className="flex justify-center gap-4 mb-6">
             <button
-              onClick={handleSaveWorkout}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center gap-2 hover:bg-blue-700"
+              className={`px-6 py-2 rounded-md ${
+                workoutType === 'ABC'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+              onClick={() => handleWorkoutTypeChange('ABC')}
             >
-              <Save size={20} />
-              Salvar Treino
+              Treino ABC
             </button>
-          )}
+            <button
+              className={`px-6 py-2 rounded-md ${
+                workoutType === 'ABCD'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+              onClick={() => handleWorkoutTypeChange('ABCD')}
+            >
+              Treino ABCD
+            </button>
+          </div>
+
+          <div className="flex justify-center items-center gap-4 mb-8">
+            <div className="flex gap-2">
+              {workoutPlan.days.map((day, index) => (
+                <button
+                  key={day.name}
+                  className={`px-4 py-2 rounded-md ${
+                    selectedDay === index
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setSelectedDay(index)}
+                >
+                  Treino {day.name}
+                </button>
+              ))}
+            </div>
+            <SaveButton workoutPlan={workoutPlan} />
+          </div>
         </div>
 
-        <SavedWorkoutsList
-          savedWorkouts={workout.savedWorkouts}
-          onViewPDF={setSelectedSavedWorkout}
-        />
+        <div className="grid md:grid-cols-2 gap-8">
+          <div>
+            <h2 className="text-xl font-bold mb-4">
+              Adicionar Exercício ao Treino {workoutPlan.days[selectedDay].name}
+            </h2>
+            <ExerciseForm onAdd={handleAddExercise} />
+          </div>
 
-        <WorkoutSplitSelector
-          onSelectSplit={handleSelectSplit}
-          onSelectDay={handleSelectDay}
-          selectedSplit={workout.selectedSplit}
-          selectedDay={workout.selectedDay}
-        />
-
-        {workout.selectedDay && (
-          <>
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <MuscleGroupTabs
-                muscleGroups={visibleMuscleGroups}
-                selectedGroup={selectedGroup}
-                onSelectGroup={setSelectedGroup}
+          <div className="space-y-8">
+            {workoutPlan.days.map((day, index) => (
+              <WorkoutDay
+                key={day.name}
+                name={day.name}
+                exercises={day.exercises}
+                onRemoveExercise={(exerciseIndex) => handleRemoveExercise(index, exerciseIndex)}
               />
-              <ExerciseForm onAdd={handleAddExercise} selectedGroupId={selectedGroup} />
-            </div>
-
-            <ExerciseList
-              muscleGroups={visibleMuscleGroups}
-              onRemoveExercise={handleRemoveExercise}
-            />
-          </>
-        )}
-      </div>
+            ))}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

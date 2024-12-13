@@ -1,112 +1,125 @@
-import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
-import type { Exercise } from '../types/workout';
+import React from 'react';
+import { Exercise, MuscleGroup } from '../types/workout';
 import { exercisesByMuscleGroup } from '../data/exercises';
 
 interface ExerciseFormProps {
   onAdd: (exercise: Exercise) => void;
-  selectedGroupId: string;
 }
 
-export default function ExerciseForm({ onAdd, selectedGroupId }: ExerciseFormProps) {
-  const [exercise, setExercise] = useState<Exercise>({
-    id: '',
-    name: '',
+export function ExerciseForm({ onAdd }: ExerciseFormProps) {
+  const [muscleGroup, setMuscleGroup] = React.useState<MuscleGroup>('peito');
+  const [exercise, setExercise] = React.useState<Exercise>({
+    name: exercisesByMuscleGroup.peito[0],
     sets: 3,
     reps: 12,
     weight: 0,
+    rest: 60,
   });
-
-  const getExerciseList = (groupId: string) => {
-    const groupMap: Record<string, keyof typeof exercisesByMuscleGroup> = {
-      '1': 'peito',
-      '2': 'costas',
-      '3': 'pernas',
-      '4': 'ombros',
-      '5': 'biceps',
-      '6': 'triceps',
-      '7': 'abdomen',
-    };
-    return exercisesByMuscleGroup[groupMap[groupId]] || [];
-  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!exercise.name) return;
-    onAdd({ ...exercise, id: crypto.randomUUID() });
-    setExercise({ id: '', name: '', sets: 3, reps: 12, weight: 0 });
+    onAdd(exercise);
+    setExercise({
+      ...exercise,
+      name: exercisesByMuscleGroup[muscleGroup][0],
+      sets: 3,
+      reps: 12,
+      weight: 0,
+      rest: 60,
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg shadow-md">
       <div>
-        <label htmlFor="exercise" className="block text-sm font-medium text-gray-700 mb-1">
-          Exercício
-        </label>
+        <label className="block text-sm font-medium text-gray-700">Grupo Muscular</label>
         <select
-          id="exercise"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          value={muscleGroup}
+          onChange={(e) => {
+            const newMuscleGroup = e.target.value as MuscleGroup;
+            setMuscleGroup(newMuscleGroup);
+            setExercise({
+              ...exercise,
+              name: exercisesByMuscleGroup[newMuscleGroup][0],
+            });
+          }}
+        >
+          {Object.keys(exercisesByMuscleGroup).map((group) => (
+            <option key={group} value={group}>
+              {group.charAt(0).toUpperCase() + group.slice(1)}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Exercício</label>
+        <select
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           value={exercise.name}
           onChange={(e) => setExercise({ ...exercise, name: e.target.value })}
-          className="w-full px-3 py-2 border rounded-md"
-          required
         >
-          <option value="">Selecione um exercício</option>
-          {getExerciseList(selectedGroupId).map((name) => (
+          {exercisesByMuscleGroup[muscleGroup].map((name) => (
             <option key={name} value={name}>
               {name}
             </option>
           ))}
         </select>
       </div>
-      <div className="grid grid-cols-3 gap-4">
+
+      <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="sets" className="block text-sm font-medium text-gray-700 mb-1">
-            Séries
-          </label>
+          <label className="block text-sm font-medium text-gray-700">Séries</label>
           <input
-            id="sets"
             type="number"
+            min="1"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             value={exercise.sets}
             onChange={(e) => setExercise({ ...exercise, sets: Number(e.target.value) })}
-            className="w-full px-3 py-2 border rounded-md"
-            min="1"
-            required
           />
         </div>
+
         <div>
-          <label htmlFor="reps" className="block text-sm font-medium text-gray-700 mb-1">
-            Repetições
-          </label>
+          <label className="block text-sm font-medium text-gray-700">Repetições</label>
           <input
-            id="reps"
             type="number"
+            min="1"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             value={exercise.reps}
             onChange={(e) => setExercise({ ...exercise, reps: Number(e.target.value) })}
-            className="w-full px-3 py-2 border rounded-md"
-            min="1"
-            required
           />
         </div>
+
         <div>
-          <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-1">
-            Peso (kg)
-          </label>
+          <label className="block text-sm font-medium text-gray-700">Peso (kg)</label>
           <input
-            id="weight"
             type="number"
+            min="0"
+            step="0.5"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             value={exercise.weight}
             onChange={(e) => setExercise({ ...exercise, weight: Number(e.target.value) })}
-            className="w-full px-3 py-2 border rounded-md"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Descanso (seg)</label>
+          <input
+            type="number"
             min="0"
-            required
+            step="5"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            value={exercise.rest}
+            onChange={(e) => setExercise({ ...exercise, rest: Number(e.target.value) })}
           />
         </div>
       </div>
+
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center justify-center gap-2"
+        className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
       >
-        <Plus size={20} />
         Adicionar Exercício
       </button>
     </form>
