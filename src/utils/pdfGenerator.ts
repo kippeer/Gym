@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { WorkoutPlan } from '../types/workout';
 
-const LOGO_TEXT = "💪 FitPlan Pro";
+const LOGO_TEXT = "===== Meu Treino ====";
 
 export const generateWorkoutPDF = (workoutPlan: WorkoutPlan) => {
   const doc = new jsPDF();
